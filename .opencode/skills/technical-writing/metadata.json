@@ -1,0 +1,12 @@
+{
+  "name": "technical-writing",
+  "description": "Generate and update technical documentation. Supports user docs, README, API documentation, guides, and specification writing.",
+  "effort": "medium",
+  "allowed-tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Edit(./README.md)"
+  ],
+  "argument-hint": "[docs | readme | guide | api] [topic | file]"
+}

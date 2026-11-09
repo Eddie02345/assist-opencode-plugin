@@ -10,3 +10,12 @@
 - Report tested results; never present the prompt or an assumption as fact.
 - Quote exactly; never reword a quotation.
 - Keep ticket ids and internal blame out of user-facing text.
+
+## Orchestrator routing
+
+- Do the work yourself by default. Delegate only for large noisy output (broad search, test logs, web fetches), truly parallel work, or a review the user asked for.
+- Subagents never spawn subagents.
+- Run reviewers only on user request or when the diff touches governance, security, or hook code. Never run reviewer and qa on the same diff.
+- Delegate with the goal, file paths, and acceptance criteria only. Never paste transcripts.
+- Read files with offset and limit; search before reading. Do not re-read a file you just edited.
+- Keep replies short. Read-only agents return status plus at most three bullets. Only editing agents include git diff --stat.

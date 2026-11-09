@@ -1,0 +1,7 @@
+{
+  "name": "pr-review",
+  "description": "Review pull requests with automatic platform detection (GitHub/Bitbucket). Fetches PR details, lists changed files, shows comments, and submits reviews with approval, changes-requested, or comment-only verdict.",
+  "effort": "medium",
+  "allowed-tools": ["Read", "Write", "Grep", "Glob", "Bash", "AskUserQuestion"],
+  "argument-hint": "[PR#|branch-name] [--approve|--changes-requested|--comment] [--message TEXT]"
+}

@@ -1,0 +1,26 @@
+{
+  "main": "opencode-go/deepseek-v4.1-flash",
+  "general": "opencode-go/deepseek-v4.1-flash",
+  "groups": {
+    "flash_roles": "opencode-go/deepseek-v4.1-flash",
+    "planning_roles": "opencode-go/glm-5.3-flash",
+    "review_roles": "opencode-go/gpt-6-luna"
+  },
+  "agents": {
+    "ask": "opencode-go/deepseek-v4.1-flash#low",
+    "developer": "opencode-go/deepseek-v4.1-flash",
+    "developer-tester": "opencode-go/glm-5.3-flash#low",
+    "devops": "opencode-go/glm-5.3-flash",
+    "explore": "opencode-go/deepseek-v4.1-flash#low",
+    "general-purpose": "opencode-go/deepseek-v4.1-flash",
+    "intake-reviewer": "opencode-go/deepseek-v4.1-flash#low",
+    "planner": "opencode-go/glm-5.3-flash",
+    "qa": "opencode-go/glm-5.3-flash#low",
+    "requirements-gatherer": "opencode-go/deepseek-v4.1-flash#low",
+    "researcher": "opencode-go/deepseek-v4.1-flash",
+    "reviewer": "opencode-go/gpt-6-luna",
+    "solutions-architect": "opencode-go/gpt-6-luna",
+    "task-planner": "opencode-go/glm-5.3-flash",
+    "worker": "opencode-go/deepseek-v4.1-flash"
+  }
+}

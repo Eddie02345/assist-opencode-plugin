@@ -1,0 +1,5 @@
+---
+description: "Clarify unclear points from the current discussion. Use on /clarify or when the user says something Claude wrote is unclear. Claude explains its own output with evidence, asks the user about points only the user can settle, shows both in chat, and appends them to a daily log. Args: [what is unclear]"
+---
+
+@clarify $ARGUMENTS

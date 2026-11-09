@@ -400,3 +400,7 @@ vite.config.ts.timestamp-*
 .agent
 
 docs/extra
+.agent/
+test-*/
+port-gate-*
+*.assist-new

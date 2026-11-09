@@ -1,0 +1,16 @@
+{
+  "name": "gather-requirements",
+  "description": "Gather and document business, user, and technical requirements using IEEE 29148 templates and OpenSpec Scenario/RFC 2119 format. Subcommands: elicit (interactive), document (structured output), review (quality audit).",
+  "effort": "high",
+  "allowed-tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "AskUserQuestion",
+    "Edit(./docs/requirements/BRD-*.md)",
+    "Edit(./docs/requirements/URD-*.md)",
+    "Edit(./docs/requirements/FR-NFR-*.md)",
+    "Edit(./docs/requirements/requirements-*.json)"
+  ],
+  "argument-hint": "[elicit | document | review] [topic | file]"
+}

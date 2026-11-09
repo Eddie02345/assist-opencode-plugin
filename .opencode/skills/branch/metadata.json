@@ -1,0 +1,12 @@
+{
+  "name": "branch",
+  "description": "Manage git branches. Create feature/bugfix/release branches with standard naming, switch branches with stash support, list all branches, clean up merged worktrees and their branches, and clear the Go build cache.",
+  "effort": "low",
+  "allowed-tools": [
+    "Bash(git:*)",
+    "Bash(df:*)",
+    "Bash(go clean:*)",
+    "Bash(realpath:*)"
+  ],
+  "argument-hint": "[create | switch | list | cleanup] [branch-name | --dry-run]"
+}

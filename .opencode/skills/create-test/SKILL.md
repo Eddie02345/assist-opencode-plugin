@@ -1,0 +1,144 @@
+---
+name: create-test
+description: >-
+  Generate black-box acceptance-criteria tests without reading implementation.
+  Enumerates input space (valid, invalid, boundary, null, type-mismatch, injection)
+  per criterion. Every test traces to AC/SPEC/FR/UC with [AC-N|SPEC-NNN|...] chains.
+effort: high
+allowed-tools:
+  - read
+  - write
+  - grep
+  - glob
+argument-hint: "[spec-file | feature-name] [language]"
+---
+
+# Create-Test
+
+Generate test files from acceptance criteria, spec Scenarios, and public interfaces, without reading implementation. Produces input-space-enumerated black-box tests with traceability chains.
+
+## Constraint: No Implementation Knowledge
+
+**Hard rule, not a tool restriction.** Never open, read, or reference the body of an implementation file. Read only:
+
+1. **Acceptance-criteria Scenarios**: the `#### Scenario:` blocks in a spec's `### Requirement:` sections
+2. **Requirement documents**: BRD/URD/FR-NFR references that define what the system must do
+3. **Public interface declarations**: function signatures, type definitions, API route/schema specs, method signatures (the "what to call" parts, never the "how it works" implementation)
+
+If you need to know what a function does, read its signature, docstring, and the spec's Scenario; never read the function body. If a signature is missing and you cannot understand the interface from the spec alone, end in `NeedsInput` at AssembleContext and name the undocumented interface (see States).
+
+## How It Works
+
+### 1. Load References
+
+Per the target language, load one reference from [references/test-frameworks/](references/test-frameworks/):
+- `go.md` for Go (`testing`, `testify`)
+- `rust.md` for Rust (`cargo test`, assertion frameworks)
+- `python.md` for Python (`pytest`, fixtures, parametrization)
+- `typescript.md` for TypeScript (`vitest`, `jest`)
+- `javascript.md` for JavaScript (native `test()` runner, or ESM/CommonJS options)
+- `kotlin.md` for Kotlin (`JUnit5`, `Kotest`)
+- `cpp.md` for C++ (`Catch2`, `GoogleTest`)
+
+Also load [references/black-box-methodology.md](references/black-box-methodology.md) to apply the enumeration checklist.
+
+### 2. Enumerate Input Space Per Acceptance Criterion
+
+For every Scenario (acceptance criterion), build the input space:
+
+- **Valid inputs:** Examples that satisfy the Scenario's GIVEN/WHEN/THEN: happy path and expected variations
+- **Invalid inputs:** Inputs that violate the Scenario's preconditions (GIVEN clause violated, or business rules broken)
+- **Boundary inputs:** Edge cases (zero, max value, empty list, first/last element, one-before-limit)
+- **Null and empty:** `null`/`nil`/`None`, empty string, empty collection, uninitialized field
+- **Type mismatches:** Wrong type passed where a specific type is expected (if the interface allows it, e.g., REST APIs with JSON, or if the language's type system permits it)
+- **Security-adjacent:** Injection-shaped strings where input is used in a command/query context (SQL injection patterns, path traversal, XSS strings, shell metacharacters)
+
+Choose 3–5 representatives per category. Write a comment on each test explaining which category it covers and why (e.g., "Boundary: max string length per RFC 2822").
+
+### 3. Traceability Chain
+
+Every test file and test case must carry a traceability comment that chains from the acceptance criterion up to the spec and requirements:
+
+```
+// [AC-2 | SPEC-003 | FR-045 | UR-012 | BR-008]
+```
+
+or shorter if not all links exist:
+
+```
+// [AC-1 | SPEC-002 | FR-010]
+// [SPEC-001 | FR-020]  // No AC ID in this spec
+```
+
+**Rules:**
+- `AC-N`: Scenario index within the requirement (required if reading a spec with Scenarios)
+- `SPEC-NNN`: Spec document ID (required)
+- `FR-NNN`, `UR-NNN`, `BR-NNN`, `NFR-NNN`: Requirements IDs from upstream docs (include if a requirement doc references them)
+- Source every ID from actual documents; never invent one.
+- Arrow direction is always upward: AC → SPEC → FR → UR → BR.
+
+### 4. Write Test Files
+
+For unit tests, place them alongside implementation (language convention: `test` subdirectory, `_test.go`, `.spec.ts`, `Test.java`). For API endpoint tests, see [references/black-box-methodology.md](references/black-box-methodology.md) "Integration-level endpoint tests" section.
+
+Output: one test file per public interface or per feature, depending on granularity. Name: `[function_name]_test.[ext]` or `[feature_name].test.[ext]`, matching the language convention.
+
+## States
+
+`create-test` is a finite-state automaton (rules T1 to T9 in [fsa-template.md](../do/references/fsa-template.md)). Follow the states in this order and do not skip one. Every `model` state ends with one line `Outcome: <value>`, and that value picks the next state. The steps under How It Works are the work inside AssembleContext (step 1), PlanCoverage (steps 2 and 3), and WriteTests (step 4).
+
+| State | Kind | Does | Outcome -> next state |
+|---|---|---|---|
+| Intake | check | Spec path present and readable; every `### Requirement:` has a `#### Scenario:`; record the list of source IDs | `ok` -> AssembleContext; `no-spec` -> NeedsInput; `scenario-missing` -> Error(precondition-failed) |
+| AssembleContext | check | Read Scenarios, requirement documents, and public signatures only; pick the framework reference | `ready` -> PlanCoverage; `interface-undocumented` or `framework-unknown` -> NeedsInput |
+| PlanCoverage | model | Map each source ID to planned tests with its input-space categories, or list it as uncovered with the reason | `mapped` -> CheckCoverage |
+| CheckCoverage | check | Every Intake ID appears in the map | `complete` -> WriteTests; `gaps` with rounds < 2 -> PlanCoverage; `gaps` with rounds = 2 -> Error(budget-exhausted) |
+| WriteTests | model | Write test files to test paths only | `written` -> SelfCheck; `needs-non-test-path` -> Error(policy-rejection) |
+| SelfCheck | check | Re-read each file. Every path matches the test-path rule, every test has a traceability comment, and every cited ID exists (Grep). Compile and run are `not-run (skipped)` because the agent has no Bash | `clean` -> Done; `issues` with fixes < 2 -> WriteTests; `issues` with fixes = 2 -> Error(budget-exhausted) |
+| Done, NeedsInput, Error | terminal | End with the terminal block below | none |
+
+Counters: `rounds` counts PlanCoverage passes after a CheckCoverage `gaps`. `fixes` counts WriteTests passes after a SelfCheck `issues`.
+
+`NeedsInput` carries numbered questions and `resume_at` (the state that asked). `/do` asks the user and resumes the same agent with the answers.
+
+### Terminal block
+
+When `create-test` runs inside a dispatched agent, the final message ends with this block ([fsa-template.md](../do/references/fsa-template.md#terminal-block)). `verdict` is `covered=N uncovered=M`: N counts source IDs with at least one test, M counts source IDs listed as uncovered. Name each uncovered ID and its reason in the prose above the block. `skipped` is `compile not-run (skipped)`.
+
+```fsa
+fsa: developer-tester/1
+state: Done
+trace: Intake > AssembleContext > PlanCoverage > CheckCoverage > WriteTests > SelfCheck > Done
+artifact: tests/auth/login.test.ts
+verdict: covered=7 uncovered=1
+skipped: compile not-run (skipped)
+out_of_scope: none
+error_class: none
+questions: none
+resume_at: none
+```
+
+## Constraints
+
+- Read only specs and public interfaces; never implementation.
+- If a spec has no Scenarios (no acceptance criteria), end in `Error(precondition-failed)` at Intake and ask the user to complete the spec first.
+- Generate tests only; never modify or run existing code.
+- Write only to test paths (see Write scope in [developer-tester](../../agents/developer-tester.md#write-scope)). A write anywhere else ends in `Error(policy-rejection)`, as does a path with a dot-prefixed segment, a file named `CLAUDE.md` or `AGENTS.md`, or a path over 4096 characters or containing NUL, even under a test glob.
+- If a test needs setup/fixtures, define them in the test file or reference the framework's standard fixture pattern (see language reference).
+- Test names must state what is being tested: `testRejectsNullInput_throwsTypeError` (good), `test1` (bad).
+- No implementation-specific mocking or spy verification: test the contract (input to output), not how it's built.
+
+## Report Writing Standard
+
+- Put the answer or the most important finding first. No preamble, no restating the question, no closing recap.
+- Let content set the length. Report a clean check in one line.
+- Give each finding three parts: what happened, why it matters, what to do next.
+- State each conclusion once. Open every paragraph with new information.
+- Use active voice; put the important subject before the verb.
+- Use plain words ("use" for "utilize"). Cut hedges, intensifiers, throat-clearing, buzzwords, and "not X but Y" framing; state what it is.
+- Name headings after their content. Skip summary labels ("In conclusion", "Key takeaways"), severity badges, and summary sections unless the reader needs them.
+- Write no em dashes (use a period, comma, colon, parentheses, or semicolon), no curly quotes, and no chatbot sign-offs or offers.
+- Back every claim with evidence (file and line, log, test result, URL) and every number with a source; label estimates as estimates.
+- Report tested results; never present the prompt or an assumption as fact.
+- Quote exactly; never reword a quotation.
+- Keep ticket ids and internal blame out of user-facing text.
