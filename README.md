@@ -1,10 +1,9 @@
 # assist-plugin for OpenCode
 
-> Fork of [assist-marketplace-plugin](https://github.com/tjmonsi/assist-marketplace-plugin) by [Toni-Jan Keith Monserrat](https://github.com/tjmonsi). Licensed AGPL-3.0-or-later. See `CREDITS.md` and `PORTING.md`.
-
-OpenCode V2 port of [assist-marketplace-plugin](https://github.com/tjmonsi/assist-marketplace-plugin): 22 skills,
-15 agents (the reviewer and code-reviewer roles are merged), and the 20 governance hooks. The hook logic is the original, vendored under `plugins/assist-plugin/`; the new
-code in `src/` adapts OpenCode events to it. See `PORTING.md` for the changes.
+OpenCode V2 port of [assist-marketplace-plugin](../assist-marketplace-plugin): 22 skills,
+16 agents (code-reviewer is restored alongside reviewer), and the 20 governance hooks. The hook logic is the original, vendored
+unchanged under `plugins/assist-plugin/`; the new code in `src/` adapts OpenCode events
+to it.
 
 Verified on OpenCode `v2.2.6`, Node `v26.8.1`, Linux.
 
@@ -14,7 +13,7 @@ Verified on OpenCode `v2.2.6`, Node `v26.8.1`, Linux.
 |---|---|---|
 | Skills | 22 loaded, 4 hidden | `ctx.skill.list()` returned 29 with built-ins; 22 assist skills and correct `autoinvoke` |
 | Commands | 20 wrappers, including `/assist-health` and `/assist-audit` | `ctx.command.list()` and live `/assist-audit` |
-| Agents | 15 loaded | `opencode debug agents` |
+| Agents | 16 loaded | `opencode debug agents` |
 | Hooks | 20 wired | 21 adapter tests plus the vendored 2431-test suite |
 | Live gates | Prose and subagent write bar deny | em-dash write blocked; `DECISIONS.md` write by a subagent blocked |
 | Audit | Five attribution fields | `.agent/logs/governance/audit.jsonl`; chain verified |
@@ -109,23 +108,38 @@ their agents.
 
 | Role | Agents | Model |
 |---|---|---|
-| Main orchestrator | main session | `opencode-go/deepseek-v4.1-flash` |
+| Main orchestrator | main session | `opencode-go/qwen3.7-plus` |
 | Built-in general | `general` | `opencode-go/deepseek-v4.1-flash` |
 | Scouting | `explore` | `opencode-go/deepseek-v4.1-flash#low` |
 | Implementation | `developer`, `worker`, `researcher`, `general-purpose` | `opencode-go/deepseek-v4.1-flash` |
 | Conversational and triage | `ask`, `intake-reviewer`, `requirements-gatherer` | `opencode-go/deepseek-v4.1-flash#low` |
-| Planning and infrastructure | `planner`, `task-planner`, `devops` | `opencode-go/glm-5.3-flash` |
-| Verification | `qa`, `developer-tester` | `opencode-go/glm-5.3-flash#low` |
-| Review | `reviewer`, `solutions-architect` | `opencode-go/gpt-6-luna` |
+| Planning and architecture | `planner`, `task-planner`, `devops`, `solutions-architect` | `opencode-go/glm-5.3-flash` |
+| Verification | `qa` | `opencode-go/deepseek-v4-pro` |
+| Developer tests | `developer-tester` | `opencode-go/glm-5.3-flash#low` |
+| General review | `reviewer` | `opencode-go/gpt-6-luna` |
+| Critical review and sign-off | `code-reviewer` | `opencode-go/deepseek-v4-pro` |
 
-No agent uses `deepseek-v4-pro`, `qwen3.7-plus`, `claude-haiku-5-5`, or any other model.
+Only `code-reviewer` and `qa` use `deepseek-v4-pro`. No agent uses `qwen3.7-plus` or `claude-haiku-5-5`.
 The six `#low` pins use the provider's supported low reasoning effort.
 
-`reviewer` and `code-reviewer` were merged into `reviewer`. The old `code-reviewer`
-file is gone and its formal sign-off duties are a section in `reviewer.md`.
+`code-reviewer` is restored for critical review and sign-off. `reviewer` remains for
+general review. The global orchestration mandate dispatches reviews to `@code-reviewer`.
 
 `general-purpose` is hidden from the subagent listing because it is an orchestrator
 fallback, not a directly dispatched role.
+
+## Delegation boundary
+
+The main `build` agent denies `edit` and `write` at the root and agent level. It must
+dispatch `developer`, `developer-tester`, `explore`, or `code-reviewer`. The built-in
+`general` subagent keeps `edit`, `write`, and `shell` allows.
+
+`shell` remains allowed for `build`, so a shell redirect can still modify files. Add a
+`shell` deny to `agents.build.permissions` if you need a hard file-write boundary.
+
+The `/do` skill still names `reviewer` in its gate tables. The global mandate names
+`code-reviewer`. Treat `reviewer` as the general reviewer and `code-reviewer` as the
+critical sign-off reviewer.
 
 ## Fallbacks
 

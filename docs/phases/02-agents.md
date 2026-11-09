@@ -4,7 +4,7 @@ Status: done.
 
 ## Scope
 
-- Convert 16 agent Markdown files to `.opencode/agents/`, then merge `reviewer` and `code-reviewer` into 15.
+- Convert 16 agent Markdown files to `.opencode/agents/`, then restore `code-reviewer` for the sign-off role, 16 total.
 - Remove `type: agent`; set `mode: subagent`.
 - Map model tiers to concrete `provider/model` pins.
 - Map `tools:` to ordered `permissions:` rules.
@@ -21,7 +21,8 @@ Status: done.
 | Conversational (`ask`, `intake-reviewer`, `requirements-gatherer`) | `opencode-go/deepseek-v4.1-flash#low` |
 | Planning (`planner`, `task-planner`, `devops`) | `opencode-go/glm-5.3-flash` |
 | Verification (`qa`, `developer-tester`) | `opencode-go/glm-5.3-flash#low` |
-| Review (`reviewer`, `solutions-architect`) | `opencode-go/gpt-6-luna` |
+| General review (`reviewer`) | `opencode-go/gpt-6-luna` |
+| Critical review (`code-reviewer`) | `opencode-go/deepseek-v4-pro` |
 
 ## Tool mapping
 
@@ -60,7 +61,8 @@ so the installer must copy this directory.
 - 16 agent files written and listed by `opencode debug agents`.
 - The cheap-routing refactor uses only `deepseek-v4.1-flash`, `glm-5.3-flash`, and
   `gpt-6-luna`.
-- `reviewer` and `code-reviewer` were merged, so the port has 15 agents.
+- `code-reviewer` is restored, so the port has 16 agents.
 - `general-purpose` is hidden from the subagent listing.
+- The main `build` agent denies edit and write, forcing delegation.
 - Every agent has the Handback Rules section at the end of its prompt.
 - Each agent has a catch-all deny followed by explicit allows.

@@ -1,11 +1,12 @@
 ---
 description: "Turn requirements into specs, APIs, schemas, and data flows."
 mode: subagent
-model: opencode-go/gpt-6-luna
+model: opencode-go/glm-5.3-flash
 permissions:
   - { action: "*", resource: "*", effect: deny }
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
+  - { action: write, resource: "*", effect: allow }
   - { action: grep, resource: "*", effect: allow }
   - { action: glob, resource: "*", effect: allow }
   - { action: shell, resource: "*", effect: allow }

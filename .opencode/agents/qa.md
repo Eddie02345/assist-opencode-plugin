@@ -1,11 +1,12 @@
 ---
 description: "Plan tests, validate acceptance criteria, and check coverage."
 mode: subagent
-model: opencode-go/glm-5.3-flash#low
+model: opencode-go/deepseek-v4-pro
 permissions:
   - { action: "*", resource: "*", effect: deny }
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
+  - { action: write, resource: "*", effect: allow }
   - { action: grep, resource: "*", effect: allow }
   - { action: glob, resource: "*", effect: allow }
   - { action: shell, resource: "*", effect: allow }

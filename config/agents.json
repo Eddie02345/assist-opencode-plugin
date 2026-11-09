@@ -1,5 +1,6 @@
 {
   "ask": "opencode-go/deepseek-v4.1-flash#low",
+  "code-reviewer": "opencode-go/deepseek-v4-pro",
   "developer": "opencode-go/deepseek-v4.1-flash",
   "developer-tester": "opencode-go/glm-5.3-flash#low",
   "devops": "opencode-go/glm-5.3-flash",
@@ -7,11 +8,11 @@
   "general-purpose": "opencode-go/deepseek-v4.1-flash",
   "intake-reviewer": "opencode-go/deepseek-v4.1-flash#low",
   "planner": "opencode-go/glm-5.3-flash",
-  "qa": "opencode-go/glm-5.3-flash#low",
+  "qa": "opencode-go/deepseek-v4-pro",
   "requirements-gatherer": "opencode-go/deepseek-v4.1-flash#low",
   "researcher": "opencode-go/deepseek-v4.1-flash",
   "reviewer": "opencode-go/gpt-6-luna",
-  "solutions-architect": "opencode-go/gpt-6-luna",
+  "solutions-architect": "opencode-go/glm-5.3-flash",
   "task-planner": "opencode-go/glm-5.3-flash",
   "worker": "opencode-go/deepseek-v4.1-flash"
 }

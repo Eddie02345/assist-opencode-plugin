@@ -6,7 +6,7 @@ Port date: 2026-11-09.
 ## Added
 
 - `src/` OpenCode plugin adapter and hook registration.
-- `.opencode/agents/` 15 OpenCode agents. `reviewer` and `code-reviewer` are merged.
+- `.opencode/agents/` 16 OpenCode agents. `code-reviewer` is restored for critical sign-off.
 - `.opencode/skills/` 22 skills with OpenCode frontmatter.
 - `.opencode/commands/` 20 command wrappers and health/audit commands.
 - `.opencode/plugins/assist/` local plugin entry.
@@ -24,7 +24,7 @@ Port date: 2026-11-09.
   the ESM root package.
 - Root `README.md` replaced with the OpenCode port README. The upstream README is
   `README.upstream.md`.
-- Model routing uses `deepseek-v4.1-flash`, `glm-5.3-flash`, and `gpt-6-luna`.
+- Model routing uses `qwen3.7-plus` for the main orchestrator, `deepseek-v4.1-flash`, `glm-5.3-flash`, `gpt-6-luna`, and `deepseek-v4-pro` for `code-reviewer` and `qa`.
 - The OpenCode hook layer adds fail-closed payload handling, a dispatch gate, a block
   loop breaker, tool-output truncation, and a retry fallback.
 
@@ -36,3 +36,13 @@ Port date: 2026-11-09.
 - The original hook regression suite under `tests/`, except for the added CommonJS
   package marker.
 - `CHANGELOG.md`, `DECISIONS.md`, `MARKETPLACE.md`, `CLAUDE.md`, and `specs/`.
+
+## Delegation
+
+The main `build` agent denies `edit` and `write` at the root and agent level. The
+orchestrator mandate in the global `AGENTS.md` directs code changes to `developer`,
+builds and tests to `developer-tester`, scouting to `explore`, and reviews to
+`code-reviewer`. Child write-capable agents keep `edit`, `write`, and `shell` allows.
+
+Shell remains allowed for `build`, so a shell redirect can still write. Add a `shell`
+deny to `agents.build.permissions` if you need a hard file-write boundary.

@@ -6,8 +6,10 @@ permissions:
   - { action: "*", resource: "*", effect: deny }
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
+  - { action: write, resource: "*", effect: allow }
   - { action: grep, resource: "*", effect: allow }
   - { action: glob, resource: "*", effect: allow }
+  - { action: shell, resource: "*", effect: allow }
   - { action: skill, resource: "*", effect: allow }
   - { action: subagent, resource: "*", effect: deny }
 ---
