@@ -102,8 +102,7 @@ permission allowlist. `PowerShell` and `LSP` were dropped. `code-reviewer` is re
 | No native fallback key | The config schema has no `fallback` field | The `retry` hook switches model after two retries; see `docs/fallbacks.md` |
 | No native per-agent reasoning key | Effort is selected with the model `#variant` (`#low`) | Six low-effort agents use `#low` pins |
 | Write-capable tool aliases | `apply_patch`, `multiedit`, `notebookedit` are not exposed by OpenCode V2 | They are in the guarded set and fail closed if seen |
-| Build can still write through shell | `shell` remains allowed for the main `build` agent | Add a `shell` deny to `agents.build.permissions` for a hard boundary |
-| Two review names | `/do` gate tables name `reviewer`; the global mandate names `code-reviewer` | Treat `reviewer` as general review and `code-reviewer` as critical sign-off |
+| Shell writes are instruction-blocked | The global mandate forbids redirects; `shell` is still permission-allowed for `build` | Add a `shell` deny to `agents.build.permissions` for a hard boundary |
 | Profile opt-out uses `.claude/settings.json` | The FERPA/HIPAA opt-out reads the Claude settings path | Keep the file, or adjust `data-class.js` for your layout |
 | Legacy skills use `${CLAUDE_PLUGIN_ROOT}` | Shell tools do not inherit the plugin process env | Use `/assist-health` and `/assist-audit`, which call plugin tools |
 | `/do` confirmation token uses `${CLAUDE_SESSION_ID}` | The session ID is not exported to shell | Treat the confirmation-token snippet as Claude Code documentation |

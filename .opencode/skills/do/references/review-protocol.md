@@ -23,7 +23,7 @@ Review happens AFTER implementation steps. Goals:
 
 The gate record fields are `command`, `exit code`, `value`, and `evidence reference` (see "Approval Tracking" and `plan-format.md`).
 
-**Evidence basis of a judgement gate.** A judgement gate clears only on both pieces together: (1) the exit code of the gate's in-plugin scanner from the table above, read from the `gate-evidence` record for that run (a scanner run with no record, or a non-zero exit, leaves the gate open), and (2) a verdict from a reviewer that did not produce the artifact, carrying `file:line` findings. A verdict from the producer does not count, so `/do` dispatches a reviewer other than the producer. Reviewers stay read-only (`tools: [Read, Grep, Glob, LSP]`): the verdict in the terminal block is evidence, and the orchestrator reads it and writes the gate record as `Writer: orchestrator`, naming the scanner command, its exit code, the evidence reference, and the reviewer verdict. A model sign-off string never supplies either piece. An external scanner (semgrep, CodeQL) is optional extra evidence and a gate never depends on one.
+**Evidence basis of a judgement gate.** A judgement gate clears only on both pieces together: (1) the exit code of the gate's in-plugin scanner from the table above, read from the `gate-evidence` record for that run (a scanner run with no record, or a non-zero exit, leaves the gate open), and (2) a verdict from a reviewer that did not produce the artifact, carrying `file:line` findings. A verdict from the producer does not count, so `/do` dispatches a reviewer other than the producer. Reviewers stay read-only (`read`, `grep`, `glob`): the verdict in the terminal block is evidence, and the orchestrator reads it and writes the gate record as `Writer: orchestrator`, naming the scanner command, its exit code, the evidence reference, and the reviewer verdict. A model sign-off string never supplies either piece. An external scanner (semgrep, CodeQL) is optional extra evidence and a gate never depends on one.
 
 ---
 
@@ -56,11 +56,19 @@ A step REQUIRES review if:
 1. It produces or modifies code files, OR
 2. It requires governance gate (security, testing, approval)
 
-**Agents that DO review:** reviewer, and qa (Testing Gate only)  
+**Agents that DO review:** `code-reviewer`, `reviewer`, and `qa` (Testing Gate only)  
 **Agents that RECEIVE review:** developer, developer-tester, devops, qa  
-**Agents never gated:** reviewer, and intake-reviewer, whose output is findings; ask and explore, which write no files
+**Agents never gated:** `code-reviewer`, `reviewer`, and `intake-reviewer`, whose output is findings; ask and explore, which write no files
 
 ---
+
+## Review agent roles
+
+| Agent | Model | Use for |
+|---|---|---|
+| `code-reviewer` | `opencode-go/deepseek-v4-pro` | code diffs, logic bugs, implementation checks, Pre-Test Code Review, Security, OWASP for LLM |
+| `reviewer` | `opencode-go/gpt-6-luna` | final PR acceptance, specification compliance, Planning Document Review, Code Review Gate, high-level sign-off |
+| `qa` | `opencode-go/deepseek-v4-pro` | Testing Gate |
 
 ## Which gate applies to which artifact
 
@@ -68,10 +76,10 @@ A step REQUIRES review if:
 
 | Artifact | Gate | Reviewer | Bound |
 |---|---|---|---|
-| Code (source, config, tests, pipelines) | Pre-Test Code Review Gate, then Security Gate (when code or devops changed), Testing Gate, and Code Review Gate | reviewer; qa for the Testing Gate | 2 consecutive LGTMs, or escalation to the user at 10 iterations per gate |
-| Planning documents (planner, solutions-architect, requirements-gatherer output, including plans, roadmaps, specs, and task-plans; task-planner output counts) | Planning Document Review Gate | reviewer | 2 consecutive LGTMs, or escalation to the user at 10 iterations |
+| Code (source, config, tests, pipelines) | Pre-Test Code Review Gate, then Security Gate (when code or devops changed), Testing Gate, and Code Review Gate | `code-reviewer` for Pre-Test and Security, `qa` for Testing, `reviewer` for Code Review sign-off | 2 consecutive LGTMs, or escalation to the user at 10 iterations per gate |
+| Planning documents (planner, solutions-architect, requirements-gatherer output, including plans, roadmaps, specs, and task-plans; task-planner output counts) | Planning Document Review Gate | `reviewer` | 2 consecutive LGTMs, or escalation to the user at 10 iterations |
 | Markdown reports (RCA, PR review verdict, answer, findings doc, generated documentation); the draft of a `/do` PR review is not one | Report Quality Gate | `review-md` | 3 rounds |
-| Any LLM-surface file, in addition to the gate for the artifact's type | OWASP for LLM Gate | reviewer, against `rules/llm-security-checklist.md` | 2 consecutive `approved`, or escalation to the user at 10 iterations per gate |
+| Any LLM-surface file, in addition to the gate for the artifact's type | OWASP for LLM Gate | `code-reviewer`, against `rules/llm-security-checklist.md` | 2 consecutive `approved`, or escalation to the user at 10 iterations per gate |
 
 A planning document written as markdown goes through the planning gate. It does not also go through the Report Quality Gate, so one artifact never runs two document gates. The execution plan file `/do` writes under `.agent/main-plan/` is not an artifact of any step and runs no gate.
 
@@ -108,15 +116,15 @@ Only the user's answer picks a choice. A reviewer verdict, a producer reply, or 
 | Verdict | Meaning | Next |
 |---|---|---|
 | `approved` | The reviewer found nothing to fix | Counts as one LGTM; the gate exits at two in a row |
-| `returned` | The reviewer listed findings | Fix phase on Sonnet, then re-review |
+| `returned` | The reviewer listed findings | Fix phase on the developer pin, then re-review |
 
-`review-md` reports "No issues found" or a findings document. `/do` reads the first as `approved` and the second as `returned` until `review-md` writes a `verdict` field of its own. The Testing Gate's reviewer is qa, and its `verdict` is `approved` or `returned` as well (see the Testing Gate). A reviewer reply with no terminal block counts as `Error` with class `no-terminal-block`: `/do` sends one retry that repeats the "Dispatch prompt text", then fails the step. A gate that reaches the cap with `returned` verdicts ends as "Exhausting a gate" describes.
+`review-md` reports "No issues found" or a findings document. `/do` reads the first as `approved` and the second as `returned` until `review-md` writes a `verdict` field of its own. The Testing Gate's reviewer is `qa`, and its `verdict` is `approved` or `returned` as well (see the Testing Gate). A reviewer reply with no terminal block counts as `Error` with class `no-terminal-block`: `/do` sends one retry that repeats the "Dispatch prompt text", then fails the step. A gate that reaches the cap with `returned` verdicts ends as "Exhausting a gate" describes.
 
 ---
 
 ## Review Output Rules
 
-Every review verdict, findings list, and PR review comment follows these rules, on top of [rules/writing-standard.md](../../../rules/writing-standard.md). The `reviewer` and `reviewer` agents and the `pr-review` skill link here.
+Every review verdict, findings list, and PR review comment follows these rules, on top of [rules/writing-standard.md](../../../rules/writing-standard.md). The `code-reviewer` and `reviewer` agents and the `pr-review` skill link here.
 
 - **Start with the verdict or the first finding.** No reasoning preamble; never restate the PR, the diff, or the task.
 - **Let the findings set the length.** Zero findings is one line (for example, `LGTM. No findings.`). Each finding is location (`file:line`), problem, fix.
@@ -131,7 +139,7 @@ Every review verdict, findings list, and PR review comment follows these rules, 
 ### Pre-Test Code Review Gate
 
 **Triggered by:** After `developer` implements code (before `developer-tester`/`qa` run tests)  
-**Reviewed by:** reviewer  
+**Reviewed by:** `code-reviewer`  
 
 **Purpose:** Syntactic + semantic consistency check on both implementation and any test files already present.
 
@@ -153,7 +161,7 @@ Every review verdict, findings list, and PR review comment follows these rules, 
 ### Security Gate (OWASP Top 10)
 
 **Triggered by:** Code changes in developer, devops agents  
-**Reviewed by:** reviewer  
+**Reviewed by:** `code-reviewer`  
 
 ### Reviewer Adversarial Self-Reflection
 
@@ -183,7 +191,7 @@ Before formal audit, reviewer deliberately:
 2. **Reviewer Audit:** Reviewer checks all 10 categories
 3. **Iteration Loop:** If issues found: the fixing agent fixes (test-file findings go to developer-tester) → Reviewer re-checks
 4. **Exit Conditions:**
-   - 2 consecutive LGTMs from reviewer: Approved
+   - 2 consecutive LGTMs from `code-reviewer`: Approved
    - 10 iterations reached: no further round; escalate to the user with continue, waive, or abort (see "Exhausting a gate")
 
 **Evidence:** the gate clears on the FR-217 pattern and secret scanner's recorded exit plus a verdict from a reviewer that did not produce the artifact, carrying `file:line` findings. The reviewer's `✓` line alone never clears it.
@@ -195,11 +203,11 @@ Before formal audit, reviewer deliberately:
 ### OWASP for LLM Gate
 
 **Triggered by:** Any non-reviewer step whose artifacts change the LLM surface, run in addition to the gate that matches the artifact's type. The LLM surface is `agents/`, `skills/` at any depth (`metadata.json` included), `rules/`, and `hooks/`, each at the repository root, under any `plugins/<name>/`, or under `.claude/`; any `CLAUDE.md`, `CLAUDE.local.md`, or `AGENTS.md` at any depth; and `.claude/settings*.json` at the repository root. An application folder such as `src/hooks/` is not on the surface.  
-**Reviewed by:** reviewer, auditing against `rules/llm-security-checklist.md`  
+**Reviewed by:** `code-reviewer`, auditing against `rules/llm-security-checklist.md`  
 **Prompt:** gate name "OWASP for LLM Gate", artifact type `code` for every LLM-surface file, and the checklist path (see "What the gate prompt carries").  
 **Position:** after the Security Gate and before the Testing Gate for a code artifact; after the type's gate clears for any other artifact type. A Report Quality Gate that ends "completed with findings attached" counts as cleared, so this gate still runs after it; a step whose type gate fails does not reach it.
 
-**Iteration Process:** the Security Gate's cap applies. Exit on 2 consecutive `approved` verdicts, or at the cap of 10 iterations run no further round and escalate to the user with continue, waive, or abort (see "Exhausting a gate"). The main agent never rewrites the artifact. The fix phase is the usual one (Sonnet, findings routed by path inside the gated step's Writes).
+**Iteration Process:** the Security Gate's cap applies. Exit on 2 consecutive `approved` verdicts, or at the cap of 10 iterations run no further round and escalate to the user with continue, waive, or abort (see "Exhausting a gate"). The main agent never rewrites the artifact. The fix phase is the usual one (the `developer` pin, `deepseek-v4.1-flash`; findings routed by path inside the gated step's Writes).
 
 **Evidence:** the gate clears on the recorded exits of `check-fsa-tables.js --check`, `sync-writing-standard.js --check`, the health self-tests, and the FR-217 scanner, plus a verdict from a reviewer that did not produce the artifact, carrying `file:line` findings. The reviewer's `✓` line alone never clears it.
 
@@ -246,7 +254,7 @@ Before formal audit, reviewer deliberately:
 1. **Invoke `review-md`** on the report file (or in-memory draft) immediately after it is produced, before it reaches the user.
 2. **Findings check:** `review-md` returns either "No issues found" or a findings document ordered by factual soundness, then consistency, then conciseness.
 3. **Iteration Loop:** If findings exist:
-   - Route the findings back to the producing agent (Sonnet, as in every fix phase)
+   - Route the findings back to the producing agent (the agent pin, as in every fix phase)
    - Producing agent fixes only the flagged issues (no unrelated rewrites)
    - Re-run `review-md` on the revised report
    - Repeat until `review-md` reports no issues, or 3 iterations reached
@@ -286,7 +294,7 @@ Before formal audit, reviewer deliberately:
 2. **Code Reviewer Audit:** Line-by-line review on all dimensions
 3. **Iteration Loop:** If changes requested: the fixing agent fixes (test-file findings go to developer-tester) → Reviewer re-audits
 4. **Exit Conditions:**
-   - 2 consecutive LGTMs from reviewer: Approved
+   - 2 consecutive LGTMs from `code-reviewer`: Approved
    - 10 iterations reached: no further round; escalate to the user with continue, waive, or abort (see "Exhausting a gate")
 
 **Evidence:** the gate clears on the recorded exits of the other gates plus a `reviewer` verdict, from a `reviewer` that did not produce the artifact, carrying `file:line` findings. The sign-off string alone never clears it.
@@ -379,9 +387,9 @@ Full constraint details: [fix-phase-rules.md](fix-phase-rules.md)
 
 ### Model Constraint
 
-- Fix phase ALWAYS uses Sonnet
-- Never use Opus for fixes, even if the review gate itself uses Opus (reviewer)
-- Never use Haiku for fixes, even for single-line changes
+- Fix phase uses the developer pin
+- Never use a review model for fixes, even when the review gate uses `code-reviewer` or `reviewer`
+- Never switch a fix to a read-only or search agent for a single-line change
 - Applies to every agent performing a fix (developer, developer-tester, devops, planner, solutions-architect, requirements-gatherer, task-planner)
 
 ### Scope Constraint
@@ -394,7 +402,7 @@ Full constraint details: [fix-phase-rules.md](fix-phase-rules.md)
 ### Fix Phase Procedure
 
 1. Reviewer produces an itemized findings list (file, line number, issue description)
-2. Orchestrator routes findings to the fixing agent with `Model: Sonnet` (non-negotiable). Route only findings whose path matches the gated step's Writes; record the rest under the step's Out of scope field. Test-path findings and Testing Gate test gaps are the exception for gates on non-chain steps: they go to `developer-tester` whatever the step's Writes say. In a planning gate (a chain step), a test-path finding goes under Out of scope. When a pass leaves no routable finding, the gate ends and the step fails with the findings in its Done field. All other findings go to the producing agent. A finding on a task-plan file goes to `task-planner`, and the dispatch names the file to overwrite. A pass with both kinds splits into one fix dispatch per agent
+2. Orchestrator routes findings to the fixing agent with its pinned model (non-negotiable). Route only findings whose path matches the gated step's Writes; record the rest under the step's Out of scope field. Test-path findings and Testing Gate test gaps are the exception for gates on non-chain steps: they go to `developer-tester` whatever the step's Writes say. In a planning gate (a chain step), a test-path finding goes under Out of scope. When a pass leaves no routable finding, the gate ends and the step fails with the findings in its Done field. All other findings go to the producing agent. A finding on a task-plan file goes to `task-planner`, and the dispatch names the file to overwrite. A pass with both kinds splits into one fix dispatch per agent
 3. Fixing agent changes ONLY the code/content tied to a listed finding
 4. Fixing agent self-reviews the fix against the findings list only (not a full-file pass)
 5. Reviewer re-audits: confirms each finding resolved AND scans for unrelated diffs
@@ -407,16 +415,16 @@ Track review passes and fix passes as separate counters in the plan file:
 
 ```markdown
 **Review:** Code Review with Iterations
-  - Review Iteration 1 (reviewer, Opus): Finds 2 issues: null check L42, unclear naming L88
-  - Fix Iteration 1 (developer, Sonnet): Fixes L42, L88 only: no other lines touched
-  - Review Iteration 2 (reviewer, Opus): Confirms both fixes, no unrelated changes → LGTM #1
-  - Review Iteration 3 (reviewer, Opus): Re-audit → LGTM #2
+  - Review Iteration 1 (reviewer, gpt-6-luna): Finds 2 issues: null check L42, unclear naming L88
+  - Fix Iteration 1 (developer, deepseek-v4.1-flash): Fixes L42, L88 only: no other lines touched
+  - Review Iteration 2 (reviewer, gpt-6-luna): Confirms both fixes, no unrelated changes → LGTM #1
+  - Review Iteration 3 (reviewer, gpt-6-luna): Re-audit → LGTM #2
   - Exited: 2 consecutive LGTMs
-  - Fix Model: Sonnet (all fix iterations, non-negotiable)
+  - Fix Model: the developer pin (all fix iterations, non-negotiable)
 ```
 
-- **Review iteration:** a reviewer audit pass (model per gate: Opus for reviewer)
-- **Fix iteration:** a fixing-agent pass (model always Sonnet)
+- **Review iteration:** a reviewer audit pass (`code-reviewer` uses `deepseek-v4-pro`; `reviewer` uses `gpt-6-luna`)
+- **Fix iteration:** a fixing-agent pass (model is the agent pin)
 - Counters are independent: a review iteration with no findings needs no matching fix iteration
 - One cap of 10 combined iterations per gate; at the cap, no further round and escalation to the user: continue, waive, or abort (see "Exhausting a gate")
 
@@ -485,14 +493,14 @@ For low-risk changes (docs, tests, non-critical fixes):
 
 ## Reviewer Responsibilities
 
-### Security Reviewer (`reviewer` agent)
+### Security Reviewer (`code-reviewer` agent)
 
 - Check OWASP top 10 compliance
 - Validate authentication/authorization
 - Check for credential leaks
 - Approve or request revision
 
-**Tools:** Read, Grep, Glob, LSP (no write, no shell)  
+**Tools:** `read`, `grep`, `glob` (no write, no shell)  
 **Authority:** Can block merge if security issues found. Its verdict is evidence that `/do` records, never a status it writes, and it does not review an artifact it produced
 
 ### Formal Code Reviewer (`reviewer` agent)
@@ -502,7 +510,7 @@ For low-risk changes (docs, tests, non-critical fixes):
 - Critical sign-off authority
 - Used for high-impact changes
 
-**Tools:** Read, Grep, Glob, LSP (no write, no shell)  
+**Tools:** `read`, `grep`, `glob` (no write, no shell)  
 **Authority:** Formal approval required for sensitive changes. Its sign-off is evidence that `/do` records, never a status it writes, and it does not sign off an artifact it produced
 
 ---

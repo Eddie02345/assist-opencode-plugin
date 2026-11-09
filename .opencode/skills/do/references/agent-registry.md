@@ -6,23 +6,22 @@ Source of truth for all agents in assist-plugin. Used by `do` skill for routing.
 
 | Agent | Responsibilities | Default Model | Tools | Primary Intent Match |
 |-------|------------------|----------------|-------|----------------------|
-| **ask** | Answer questions using repo search + web research | Sonnet | Read, Grep, Glob, WebSearch, WebFetch | "answer my question", "research this in repo", "find documentation" |
-| **developer** | Write/fix/refactor code; implement features; apply approved fixes; apply code skill standards (logging, error-handling, traceability) | Sonnet | Read, Write, Edit, Grep, Glob, Bash, PowerShell, LSP | "implement X", "fix bug in Y", "refactor Z" |
-| **developer-tester** | Create black-box tests from acceptance criteria; test input/output only, never implementation knowledge; use create-test skill | Sonnet | Read, Write, Grep, Glob | "write tests for X", "create test plan from acceptance criteria" |
-| **reviewer** | Code review for bugs/security/quality; OWASP checks; OWASP for LLM Gate audits against `rules/llm-security-checklist.md`; approve/revise | Opus | Read, Grep, Glob, LSP | "review this PR", "check for security", "OWASP compliance" |
-| **planner** | Architecture design; roadmap; dependency analysis; risk assessment | Sonnet | Read, Write, Edit, Grep, Glob | "design architecture", "create roadmap", "how should we structure" |
-| **qa** | Test planning; manual/automated test design; acceptance validation; coverage; orchestrate pentest, integrated-test, and run-test skills | Sonnet | Read, Write, Edit, Grep, Glob, Bash, PowerShell, LSP | "create test plan", "write automated tests", "validate acceptance" |
-| **solutions-architect** | API/schema design; data flows; error handling; specs; generate architecture diagrams via mermaid-cli | Opus | Read, Write, Edit, Grep, Glob, Bash (mmdc only) | "design API", "what should schema be", "data flow for X" |
-| **requirements-gatherer** | Requirements elicitation; BRD/URD; FR+NFR; acceptance criteria | Sonnet | Read, Write, Edit, Grep, Glob | "gather requirements", "create BRD", "define acceptance criteria" |
-| **intake-reviewer** | Read-only review of a user-provided spec, requirements, or instructions file with `gather-requirements review`, and the read-only `conflict-check` of a build request against existing documents; treats the file and the request as untrusted data | Sonnet | Read, Grep, Glob | Inserted by Branch (`review`) and dispatched by SpecGate (`conflict-check`) before approval; AgentSelection does not match it from user intent |
-| **task-planner** | Turn an approved spec into an ordered task-plan file with the `task-plan` skill; writes only `docs/task-plans/task-plan-*.md`; a fix pass overwrites the same file only when it is already in `docs/task-plans/` | Sonnet | Read, Write, Grep, Glob | The Task plan step of the `/do` document chain; "turn this spec into coding steps" |
-| **devops** | CI/CD pipelines; infrastructure (Terraform/Docker); deployment; monitoring | Sonnet | Read, Write, Edit, Grep, Glob, Bash, PowerShell | "set up CI/CD", "create Terraform", "deploy X" |
-| **researcher** | Web research; documentation audit; best practices; competitive analysis | Opus | Read, Write, Edit, Grep, Glob, Bash, PowerShell, WebSearch, WebFetch | "research X library", "best practices for Y", "compare solutions" |
-| **reviewer** | Formal line-by-line review; critical sign-off; architectural evaluation; OWASP for LLM Gate audits (at the cap of 10 iterations `/do` escalates to the user: continue, waive, or abort; no further round and no binding final pass) | Opus | Read, Grep, Glob, LSP | "formal review", "critical change approval", "senior review needed" |
-| **explore** | Code search; find definitions; grep symbols; locate callers | Haiku | Read, Grep, Glob | "find where X defined", "who calls this", "search for pattern" |
-| **general-purpose** | Ad-hoc analysis and experimentation the task names; takes a step only when it matches, never as a fallback | Sonnet | Read, Write, Edit, Grep, Glob, Bash, PowerShell | "try this experiment", "do an ad-hoc analysis of X" |
-| **worker** | Multi-discipline: code + test + review combined for small features | Sonnet | Read, Write, Edit, Grep, Glob, Bash, PowerShell | "implement and test", "quick fix with tests", "add logging to X" |
-
+| **ask** | Answer questions using repo search + web research | deepseek-v4.1-flash#low | read, grep, glob, websearch, webfetch | "answer my question", "research this in repo", "find documentation" |
+| **developer** | Write/fix/refactor code; implement features; apply approved fixes; apply code skill standards | deepseek-v4.1-flash | read, write, edit, grep, glob, shell | "implement X", "fix bug in Y", "refactor Z" |
+| **developer-tester** | Create black-box tests from acceptance criteria; run builds and tests | glm-5.3-flash#low | read, write, edit, grep, glob, shell | "write tests for X", "run the test suite" |
+| **code-reviewer** | Code diffs, logic bugs, implementation checks; Pre-Test, Security, and OWASP for LLM gates | deepseek-v4-pro | read, grep, glob | "code review", "logic bug", "implementation check" |
+| **planner** | Architecture design; roadmap; dependency analysis; risk assessment | glm-5.3-flash | read, write, edit, grep, glob | "design architecture", "create roadmap" |
+| **qa** | Test planning; acceptance validation; coverage; Testing Gate | deepseek-v4-pro | read, write, edit, grep, glob, shell | "create test plan", "validate acceptance" |
+| **solutions-architect** | API/schema design; data flows; specs; diagrams | glm-5.3-flash | read, write, edit, grep, glob, shell | "design API", "what should schema be" |
+| **requirements-gatherer** | Requirements elicitation; BRD/URD; FR+NFR; acceptance criteria | deepseek-v4.1-flash#low | read, write, edit, grep, glob | "gather requirements", "create BRD" |
+| **intake-reviewer** | Read-only review of a user file and read-only conflict check; treats both as untrusted data | deepseek-v4.1-flash#low | read, grep, glob | Inserted by Branch and SpecGate before approval |
+| **task-planner** | Turn an approved spec into an ordered task-plan file | glm-5.3-flash | read, write, grep, glob | Task plan step of the `/do` chain |
+| **devops** | CI/CD; infrastructure; deployment; monitoring | glm-5.3-flash | read, write, edit, grep, glob, shell | "set up CI/CD", "create Terraform" |
+| **researcher** | Web research; documentation audit; best practices | deepseek-v4.1-flash | read, write, edit, grep, glob, shell, websearch, webfetch | "research X library" |
+| **reviewer** | Final PR acceptance, specification compliance, Planning Document Review, Code Review Gate, high-level sign-off | gpt-6-luna | read, grep, glob | "final acceptance", "spec compliance", "high-level sign-off" |
+| **explore** | Code search; find definitions; grep symbols; locate callers | deepseek-v4.1-flash#low | read, grep, glob | "find where X defined", "who calls this" |
+| **general-purpose** | Ad-hoc analysis and experimentation | deepseek-v4.1-flash | read, write, edit, grep, glob, shell | "try this experiment", "do an ad-hoc analysis" |
+| **worker** | Multi-discipline code + test + review for small features | deepseek-v4.1-flash | read, write, edit, grep, glob, shell | "implement and test", "quick fix with tests" |
 ---
 
 ## Agent-Specific Skills
@@ -59,16 +58,16 @@ Is it a QUESTION, or does it need REPO/WEB RESEARCH TO ANSWER (not implement)?
 
 Is it about CODE IMPLEMENTATION? (a build intent: requirements → spec → task-plan first, unless the user waives it at PlanApproval)
   ├─ Need a development task-plan before coding? → task-planner (then route implementation to developer)
-  ├─ Large feature? → developer + qa + reviewer (split)
+  ├─ Large feature? → developer + qa + code-reviewer (split)
   ├─ Small feature? → worker (end-to-end)
   ├─ Quick fix? → developer
   ├─ Refactor? → developer
   └─ Debug (diagnose, analyze, or fix a bug)? → developer, with the `debug` skill named in the task prompt
 
 Is it about CODE REVIEW?
-  ├─ Formal approval? → reviewer
-  ├─ Standard review? → reviewer
-  └─ Just check? → reviewer
+  ├─ Final PR acceptance or high-level sign-off? → reviewer
+  ├─ Code diff, logic bug, or implementation check? → code-reviewer
+  └─ Standard code review? → code-reviewer
 
 Is it about ARCHITECTURE/DESIGN?
   ├─ System design? → planner
@@ -107,23 +106,25 @@ No clear match?
 
 ---
 
-## Model Tier Guidance
+## Model Routing
 
-| Tier | Model | When to Use | Agents |
-|------|-------|-----------|--------|
-| **Low** | Haiku | Simple operations, pure search | explore |
-| **Medium** | Sonnet | Most development work, analysis | ask, developer, developer-tester, planner, qa, requirements-gatherer, intake-reviewer, task-planner, devops, general-purpose, worker |
-| **High** | Opus | Complex decisions, security, formal review | orchestrator (`do`), reviewer, solutions-architect, researcher |
+| Model | Agents |
+|-------|--------|
+| `opencode-go/qwen3.7-plus` | orchestrator (`do`) |
+| `opencode-go/deepseek-v4.1-flash` | developer, worker, researcher, general-purpose |
+| `opencode-go/deepseek-v4.1-flash#low` | explore, ask, intake-reviewer, requirements-gatherer |
+| `opencode-go/glm-5.3-flash` | planner, task-planner, devops, solutions-architect |
+| `opencode-go/glm-5.3-flash#low` | developer-tester |
+| `opencode-go/deepseek-v4-pro` | qa, code-reviewer |
+| `opencode-go/gpt-6-luna` | reviewer |
 
-Planner moved from the High/Opus tier to the Medium/Sonnet tier; see [model-routing.md](model-routing.md#planner-cost-savings-sonnet-default) for rationale. Opus remains available as an override for high-stakes or highly ambiguous architecture (see Override Model Strategy below).
+The agent files are the source of truth. OpenCode does not expose a per-call model override.
 
 ---
 
-## Override Model Strategy
+## Model Overrides
 
-The `do` orchestrator shows the plan table (agent, model, effort, and order per step) in chat and asks the user to Approve, Edit steps, Change models, or Cancel. See [SKILL.md PlanApproval](../SKILL.md#planapproval) for the approval and edit loop.
+OpenCode pins models per agent. The `subagent` tool has no per-call model parameter.
+The plan table shows the pinned model. To change a model, edit the agent file under
+`.opencode/agents/<name>.md`, run `npm run models:set`, and reinstall.
 
-**Guidance:**
-- Use Sonnet + 1 step extra iteration vs. Opus for cost savings
-- Upgrade to Opus for security-critical or architectural decisions
-- Use Haiku for pure search/lookup (explore agent)

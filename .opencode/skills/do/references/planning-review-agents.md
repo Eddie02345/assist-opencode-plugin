@@ -9,7 +9,7 @@ See [../../../rules/assist-plugin-rule.md](../../../rules/assist-plugin-rule.md)
 ### Planner Agent
 - **Document types:** Architecture decisions, task planning, roadmaps, sprint plans
 - **Review gate applies:** Yes
-- **Reviewed by:** `reviewer` or `reviewer` agent
+- **Reviewed by:** `reviewer` agent
 - **Typical review criteria:**
   - Is the architecture decision well-justified?
   - Are task breakdowns clear and actionable?
@@ -19,7 +19,7 @@ See [../../../rules/assist-plugin-rule.md](../../../rules/assist-plugin-rule.md)
 ### Solutions Architect Agent
 - **Document types:** API specifications, data flow diagrams, schema designs, implementation contracts, system design docs
 - **Review gate applies:** Yes
-- **Reviewed by:** `reviewer` or `reviewer` agent
+- **Reviewed by:** `reviewer` agent
 - **Typical review criteria:**
   - Are specifications complete and unambiguous?
   - Is the design feasible given constraints?
@@ -30,7 +30,7 @@ See [../../../rules/assist-plugin-rule.md](../../../rules/assist-plugin-rule.md)
 ### Requirements Gatherer Agent
 - **Document types:** Business Requirements Document (BRD), User Requirements Document (URD), Feature requirements, Non-functional requirements (NFRs)
 - **Review gate applies:** Yes
-- **Reviewed by:** `reviewer` or `reviewer` agent
+- **Reviewed by:** `reviewer` agent
 - **Typical review criteria:**
   - Are requirements clear and testable?
   - Are acceptance criteria complete?
@@ -41,7 +41,7 @@ See [../../../rules/assist-plugin-rule.md](../../../rules/assist-plugin-rule.md)
 ### Researcher Agent
 - **Document types:** Documentation audits, best practice surveys, analysis reports
 - **Review gate applies:** Conditional (if output is final deliverable doc)
-- **Reviewed by:** `reviewer` or `reviewer` agent
+- **Reviewed by:** `reviewer` agent
 - **Typical review criteria:** Accuracy, completeness, source verification
 - **Typical iterations:** 1-2 (fact-checking, source coverage)
 

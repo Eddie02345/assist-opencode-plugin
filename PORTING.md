@@ -46,3 +46,13 @@ builds and tests to `developer-tester`, scouting to `explore`, and reviews to
 
 Shell remains allowed for `build`, so a shell redirect can still write. Add a `shell`
 deny to `agents.build.permissions` if you need a hard file-write boundary.
+
+## Review gates
+
+`/do` uses `code-reviewer` (`deepseek-v4-pro`) for code diffs, logic bugs, implementation
+checks, Pre-Test, Security, and OWASP for LLM. It uses `reviewer` (`gpt-6-luna`) for final
+PR acceptance, specification compliance, Planning Document Review, and Code Review
+sign-off. The global orchestration mandate uses the same triggers.
+
+The global mandate also forbids shell redirects and heredocs for file writes. The
+`shell` permission remains allowed for `build`, so that boundary is instruction-level.

@@ -122,8 +122,10 @@ their agents.
 Only `code-reviewer` and `qa` use `deepseek-v4-pro`. No agent uses `qwen3.7-plus` or `claude-haiku-5-5`.
 The six `#low` pins use the provider's supported low reasoning effort.
 
-`code-reviewer` is restored for critical review and sign-off. `reviewer` remains for
-general review. The global orchestration mandate dispatches reviews to `@code-reviewer`.
+`code-reviewer` handles code diffs, logic bugs, implementation checks, Pre-Test,
+Security, and OWASP for LLM. `reviewer` handles final PR acceptance, specification
+compliance, Planning Document Review, and Code Review sign-off. The global mandate uses
+those exact triggers.
 
 `general-purpose` is hidden from the subagent listing because it is an orchestrator
 fallback, not a directly dispatched role.
@@ -134,12 +136,15 @@ The main `build` agent denies `edit` and `write` at the root and agent level. It
 dispatch `developer`, `developer-tester`, `explore`, or `code-reviewer`. The built-in
 `general` subagent keeps `edit`, `write`, and `shell` allows.
 
-`shell` remains allowed for `build`, so a shell redirect can still modify files. Add a
-`shell` deny to `agents.build.permissions` if you need a hard file-write boundary.
+The global mandate forbids shell writes (`>`, `>>`, `tee`, heredocs). The `shell`
+permission remains allowed for `build`, so this is an instruction-level boundary, not a
+hard permission boundary. Add a `shell` deny to `agents.build.permissions` if you need
+one.
 
-The `/do` skill still names `reviewer` in its gate tables. The global mandate names
-`code-reviewer`. Treat `reviewer` as the general reviewer and `code-reviewer` as the
-critical sign-off reviewer.
+The `/do` gate tables use `code-reviewer` for code diffs, logic bugs, implementation
+checks, Pre-Test, Security, and OWASP for LLM. They use `reviewer` for final PR
+acceptance, specification compliance, Planning Document Review, and Code Review
+sign-off.
 
 ## Fallbacks
 
@@ -244,8 +249,8 @@ counted as skipped, not passed.
   `retry` hook, not in configuration.
 - `apply_patch`, `multiedit`, and `notebookedit` are not exposed by OpenCode V2. If a
   provider emits one, the adapter treats it as a guarded tool and denies it.
-- `code-reviewer` was merged into `reviewer`; references in the OpenCode skills now
-  point at `reviewer`.
+- `code-reviewer` is restored. `/do` uses `code-reviewer` for code gates and
+  `reviewer` for final sign-off.
 
 ## License
 

@@ -19,7 +19,7 @@ Brief 1-2 sentence summary of what this plan accomplishes.
 
 | # | Step | Agent | Model | Effort | Runs | Build | Files |
 |---|---|---|---|---|---|---|---|
-| 1 | [Action title] | [agent-name] | [Opus / Sonnet / Haiku] | [effort] | [Runs value] | [yes / no] | [key files] |
+| 1 | [Action title] | [agent-name] | [model] | [default / low] | [Runs value] | [yes / no] | [key files] |
 | 2 | ... | ... | ... | ... | ... | ... | ... |
 
 Order: [one line, for example "1a and 1b in parallel, then 2, then 3"]
@@ -52,8 +52,8 @@ Order: [one line, for example "1a and 1b in parallel, then 2, then 3"]
 
 **Goal:** [What this step achieves]  
 **Agent:** [agent-name]  
-**Model:** [Opus | Sonnet | Haiku]  
-**Effort:** [low | medium | high | xhigh]  
+**Model:** [model]  
+**Effort:** [default | low]  
 **Background:** [yes | no]  
 **Effect:** [read | write]  
 **Chain:** [yes for a document-chain step of a build plan; omit otherwise]  
@@ -178,7 +178,7 @@ Present for a build plan. A build step writes code, config, pipelines, infrastru
 - The **Done** field follows the three-part pattern when it reports a non-trivial outcome: what was done, why it matters (if not obvious), what remains (if anything).
 
 ### Review Gates
-- **Security (OWASP):** Must pass OWASP top 10 checks (reviewed by `reviewer` or `reviewer`, never the producer). The gate clears on the FR-217 scanner's recorded exit plus that reviewer's verdict with `file:line` findings, not on a sign-off string
+- **Security (OWASP):** Must pass OWASP top 10 checks (reviewed by `code-reviewer`, never the producer). The gate clears on the FR-217 scanner's recorded exit plus that reviewer's verdict with `file:line` findings, not on a sign-off string
 - **Testing (>=70% coverage):** Code coverage must meet minimum (validated by `qa`). The gate clears only on the `gate-evidence` hook's record of the run (command, exit code, value), never on a qa sign-off string
 - **Code Review (sign-off):** Formal approval required (from a `reviewer` that did not produce the artifact). The gate clears on the recorded exits of the other gates plus that verdict with `file:line` findings
 
@@ -190,7 +190,7 @@ A gate is cleared only with an evidence reference; a sign-off string that a mode
 - **exit code:** the command's exit code
 - **value:** the measured value, such as the parsed coverage percentage (omitted for a scanner)
 - **evidence reference:** the pointer to the record: the `gate-evidence` event in the governance audit log (`.agent/logs/governance/audit.jsonl`, with its `tool_use_id`), or a CI artifact identifier (never its contents)
-- **reviewer verdict (judgement gates only):** the verdict of a reviewer other than the producer (`reviewer` or `reviewer`), the reviewer's name, and its `file:line` findings. The orchestrator copies the verdict from the reviewer's terminal block; the reviewer, being read-only, writes none of the record
+- **reviewer verdict (judgement gates only):** the verdict of a reviewer other than the producer (`code-reviewer` for code and OWASP gates, `reviewer` for planning and final sign-off), the reviewer's name, and its `file:line` findings. The orchestrator copies the verdict from the reviewer's terminal block; the reviewer, being read-only, writes none of the record
 
 A deterministic gate (Coverage >=70%, a test-runner exit) takes these four fields from the `gate-evidence` hook's record. The orchestrator dedupes the records that share a `tool_use_id` and prefers the failure: if any record for that `tool_use_id` reports a non-zero exit code, or comes from a `PostToolUseFailure` event, the gate does not clear, whatever an exit-0 sibling says; only an unambiguous success (exit 0, no failure sibling) clears. A judgement gate (OWASP Clear, LLM Security Clear, Approved for merge) takes its command, exit code, and evidence reference from the in-plugin scanner runs (one set of fields per scanner the mapping below names) and adds the reviewer verdict field: the verdict of a reviewer other than the producer, with `file:line` findings. The gate stays open when any scanner run lacks a record or exited non-zero, or when the reviewer verdict is missing, comes from the producer, or is a sign-off string alone. The mapping is fixed: OWASP for LLM Clear rests on `check-fsa-tables.js`, `sync-writing-standard.js`, and the health self-tests, with the FR-217 pattern and secret scanner; Code Security / OWASP Clear on the FR-217 scanner; Coverage >=70% on the test runner's coverage exit; Approved for merge on the aggregate of those exits plus a `reviewer` verdict. No gate needs an external scanner installed. See `review-protocol.md`.
 
@@ -213,12 +213,12 @@ Implement JWT-based user authentication with register/login endpoints, test cove
 
 | # | Step | Agent | Model | Effort | Runs | Build | Files |
 |---|---|---|---|---|---|---|---|
-| 1 | Requirements | requirements-gatherer | Sonnet | medium | Starts first | no | `docs/requirements/FR-NFR-auth.md` |
-| 2 | API Specification | solutions-architect | Opus | xhigh | After step 1 | no | `specs/spec-auth.md` |
-| 3 | Task Plan | task-planner | Sonnet | high | After step 2 | no | `docs/task-plans/task-plan-auth-*.md` |
-| 4 | Implementation | developer | Sonnet | high | After step 3 | yes | `src/auth/`, `src/middleware/`, `src/types/auth.ts` |
-| 5 | Test Suite | qa | Sonnet | high | Wave 5, parallel with 6 | yes | `tests/auth/`, `tests/integration/` |
-| 6 | Security Review | reviewer | Opus | xhigh | Wave 5, parallel with 5 | no | `src/auth/`, `src/middleware/` |
+| 1 | Requirements | requirements-gatherer | deepseek-v4.1-flash#low | low | Starts first | no | `docs/requirements/FR-NFR-auth.md` |
+| 2 | API Specification | solutions-architect | glm-5.3-flash | default | After step 1 | no | `specs/spec-auth.md` |
+| 3 | Task Plan | task-planner | glm-5.3-flash | default | After step 2 | no | `docs/task-plans/task-plan-auth-*.md` |
+| 4 | Implementation | developer | deepseek-v4.1-flash | default | After step 3 | yes | `src/auth/`, `src/middleware/`, `src/types/auth.ts` |
+| 5 | Test Suite | qa | deepseek-v4-pro | default | Wave 5, parallel with 6 | yes | `tests/auth/`, `tests/integration/` |
+| 6 | Security Review | code-reviewer | deepseek-v4-pro | default | Wave 5, parallel with 5 | no | `src/auth/`, `src/middleware/` |
 
 Order: 1, then 2, then 3, then document sign-off, then 4, then 5 and 6 in parallel.
 
@@ -243,8 +243,8 @@ Order: 1, then 2, then 3, then document sign-off, then 4, then 5 and 6 in parall
 
 **Goal:** Document the authentication requirements with acceptance criteria  
 **Agent:** requirements-gatherer  
-**Model:** Sonnet  
-**Effort:** medium  
+**Model:** deepseek-v4.1-flash#low  
+**Effort:** low  
 **Background:** no  
 **Effect:** write  
 **Chain:** yes  
@@ -264,8 +264,8 @@ Order: 1, then 2, then 3, then document sign-off, then 4, then 5 and 6 in parall
 
 **Goal:** Design authentication API schema (endpoints, payloads, error codes)  
 **Agent:** solutions-architect  
-**Model:** Opus  
-**Effort:** xhigh  
+**Model:** glm-5.3-flash  
+**Effort:** default  
 **Background:** no  
 **Effect:** write  
 **Chain:** yes  
@@ -287,8 +287,8 @@ Order: 1, then 2, then 3, then document sign-off, then 4, then 5 and 6 in parall
 
 **Goal:** Turn the spec into ordered coding steps  
 **Agent:** task-planner  
-**Model:** Sonnet  
-**Effort:** high  
+**Model:** glm-5.3-flash  
+**Effort:** default  
 **Background:** no  
 **Effect:** write  
 **Chain:** yes  
@@ -307,8 +307,8 @@ Order: 1, then 2, then 3, then document sign-off, then 4, then 5 and 6 in parall
 
 **Goal:** Write authentication service, controllers, middleware  
 **Agent:** developer  
-**Model:** Sonnet  
-**Effort:** high  
+**Model:** deepseek-v4.1-flash  
+**Effort:** default  
 **Background:** no  
 **Effect:** write  
 **Build:** yes  
@@ -331,8 +331,8 @@ Order: 1, then 2, then 3, then document sign-off, then 4, then 5 and 6 in parall
 
 **Goal:** Write unit + integration tests for auth flows  
 **Agent:** qa  
-**Model:** Sonnet  
-**Effort:** high  
+**Model:** deepseek-v4-pro  
+**Effort:** default  
 **Background:** yes  
 **Effect:** write  
 **Build:** yes  
@@ -353,9 +353,9 @@ Order: 1, then 2, then 3, then document sign-off, then 4, then 5 and 6 in parall
 ### Step 6: Security Review
 
 **Goal:** OWASP review for authentication code  
-**Agent:** reviewer  
-**Model:** Opus  
-**Effort:** xhigh  
+**Agent:** code-reviewer  
+**Model:** deepseek-v4-pro  
+**Effort:** default  
 **Background:** yes  
 **Effect:** read  
 **Build:** no  

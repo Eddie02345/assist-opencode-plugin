@@ -71,7 +71,7 @@ Is the intent a QUESTION, LOOKUP, or RESEARCH task
 AND NOT an implementation/review/planning task?
   │
   ├─ YES → route to ask agent
-  │         (Read, Grep, Glob, WebSearch, WebFetch: Sonnet)
+  │         (`read`, `grep`, `glob`, `websearch`, `webfetch`: deepseek-v4.1-flash#low)
   │         Skip agent-registry table entirely.
   │
   └─ NO  → continue with AgentSelection (agent-registry.md table)
