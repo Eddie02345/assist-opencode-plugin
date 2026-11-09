@@ -132,45 +132,15 @@ fallback, not a directly dispatched role.
 
 ## Delegation boundary
 
-The main `build` agent denies `edit` and `write` at the root and agent level. It must
-dispatch `developer`, `developer-tester`, `explore`, or `code-reviewer`. The built-in
-`general` subagent keeps `edit`, `write`, and `shell` allows.
+Outside `/do`, the main `build` agent edits files directly. The global orchestration
+mandate was removed.
 
-The global mandate forbids shell writes (`>`, `>>`, `tee`, heredocs). The `shell`
-permission remains allowed for `build`, so this is an instruction-level boundary, not a
-hard permission boundary. Add a `shell` deny to `agents.build.permissions` if you need
-one.
+Inside a multi-phase `/do` workflow, the skill mandates delegating implementation to
+`@developer` and testing to `@developer-tester`. It also tells `/do` not to use shell
+redirects for implementation or test files. `/do` keeps its own plan and `DECISIONS.md`
+writes.
 
-The `/do` gate tables use `code-reviewer` for code diffs, logic bugs, implementation
-checks, Pre-Test, Security, and OWASP for LLM. They use `reviewer` for final PR
-acceptance, specification compliance, Planning Document Review, and Code Review
-sign-off.
-
-## Fallbacks
-
-OpenCode V2 has no native `fallback` key in the config schema. The fallback is
-programmatic in the `retry` session hook in `src/hooks.ts`.
-
-| From | Fallback |
-|---|---|
-| `deepseek-v4.1-flash` | `glm-5.3-flash` |
-| `glm-5.3-flash` | `deepseek-v4.1-flash` |
-| `gpt-6-luna` | `glm-5.3-flash` |
-
-On 429 or 5xx, the hook retries twice with backoff, then switches the session model to
-the fallback once. It never loops on the same model and never uses Iceman Contributor
-Free.
-
-## Compaction
-
-`opencode.json` sets:
-
-```json
-"compaction": { "auto": true, "keep": { "tokens": 120000 }, "buffer": "10%" }
-```
-
-Compaction runs near the context limit and keeps a large tail, so it rewrites rarely.
-`compaction.prune` is left at its default `false`.
+Child write-capable agents keep `edit`, `write`, and `shell` allows.
 
 ## Prompt cache and context
 

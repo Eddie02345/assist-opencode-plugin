@@ -39,13 +39,14 @@ Port date: 2026-11-09.
 
 ## Delegation
 
-The main `build` agent denies `edit` and `write` at the root and agent level. The
-orchestrator mandate in the global `AGENTS.md` directs code changes to `developer`,
-builds and tests to `developer-tester`, scouting to `explore`, and reviews to
-`code-reviewer`. Child write-capable agents keep `edit`, `write`, and `shell` allows.
+Outside `/do`, the main `build` agent edits files directly. The global orchestration
+mandate is not in the global `AGENTS.md`.
 
-Shell remains allowed for `build`, so a shell redirect can still write. Add a `shell`
-deny to `agents.build.permissions` if you need a hard file-write boundary.
+The `/do` skill carries the scoped mandate: delegate implementation to `@developer` and
+testing to `@developer-tester`. It also forbids shell redirects for implementation and
+test files during `/do`; `/do` keeps its own plan and `DECISIONS.md` writes.
+
+Child write-capable agents keep `edit`, `write`, and `shell` allows.
 
 ## Review gates
 

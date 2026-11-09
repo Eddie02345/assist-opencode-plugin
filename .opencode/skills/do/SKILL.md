@@ -29,6 +29,14 @@ Route every incoming task to the right specialized subagent. The main agent coor
 
 Think deeply before decomposing or delegating.
 
+## Delegation mandate
+
+When executing a multi-phase `/do` workflow, delegate implementation to `@developer` and testing to `@developer-tester`.
+
+- Code diffs, logic bugs, and implementation checks: dispatch `@code-reviewer` (`opencode-go/deepseek-v4-pro`).
+- Final PR acceptance, specification compliance, and high-level sign-offs: dispatch `@reviewer` (`opencode-go/gpt-6-luna`).
+- Do not use shell redirects (`>`, `>>`, `tee`, `cat << 'EOF'`) to create, overwrite, or edit implementation or test files during a `/do` workflow. `/do` keeps its own plan and `DECISIONS.md` writes.
+
 ## States
 
 `/do` is a finite-state automaton. Each state ends in one outcome, and the outcome picks the next state (rules T1 to T9 in [references/fsa-template.md](references/fsa-template.md)). Follow the states in this order and do not skip one.

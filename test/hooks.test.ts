@@ -535,7 +535,7 @@ test("shell permission gate denies an empty command instead of allowing it", asy
   rmSync(directory, { recursive: true, force: true })
 })
 
-test("agent pins, delegation permissions, and handback rules match the config", async () => {
+test("agent pins and editing permissions match the config", async () => {
   const routing = JSON.parse(readFileSync(path.join(process.cwd(), "config", "agents.json"), "utf8"))
   for (const [agent, model] of Object.entries(routing)) {
     const text = readFileSync(path.join(process.cwd(), ".opencode", "agents", `${agent}.md`), "utf8")
@@ -551,14 +551,16 @@ test("agent pins, delegation permissions, and handback rules match the config", 
   assert.equal(config.agents.general.model, "opencode-go/deepseek-v4.1-flash")
   for (const action of ["edit", "write"]) {
     assert.ok(
-      config.permissions.some((rule: any) => rule.action === action && rule.resource === "*" && rule.effect === "deny"),
-      `root ${action} deny`,
+      !(config.permissions ?? []).some(
+        (rule: any) => rule.action === action && rule.resource === "*" && rule.effect === "deny",
+      ),
+      `root ${action} not denied`,
     )
     assert.ok(
       config.agents.build.permissions.some(
-        (rule: any) => rule.action === action && rule.resource === "*" && rule.effect === "deny",
+        (rule: any) => rule.action === action && rule.resource === "*" && rule.effect === "allow",
       ),
-      `build ${action} deny`,
+      `build ${action} allow`,
     )
   }
   assert.ok(existsSync(path.join(process.cwd(), ".opencode", "agents", "code-reviewer.md")))

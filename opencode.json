@@ -27,12 +27,12 @@
         {
           "action": "edit",
           "resource": "*",
-          "effect": "deny"
+          "effect": "allow"
         },
         {
           "action": "write",
           "resource": "*",
-          "effect": "deny"
+          "effect": "allow"
         }
       ]
     }
@@ -46,17 +46,5 @@
       "tokens": 120000
     },
     "buffer": "10%"
-  },
-  "permissions": [
-    {
-      "action": "edit",
-      "resource": "*",
-      "effect": "deny"
-    },
-    {
-      "action": "write",
-      "resource": "*",
-      "effect": "deny"
-    }
-  ]
+  }
 }
