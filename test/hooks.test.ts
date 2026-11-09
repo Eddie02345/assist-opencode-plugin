@@ -425,7 +425,7 @@ test("an identical policy block twice stops the turn", async () => {
   rmSync(directory, { recursive: true, force: true })
 })
 
-test("dispatch gate allows two subagents per turn and resets on a new prompt", async () => {
+test("dispatch gate allows eight subagents per turn and resets on a new prompt", async () => {
   reset()
   const directory = projectDir("dispatch")
   const { ctx, handlers } = fakeContext(directory)
@@ -440,12 +440,13 @@ test("dispatch gate allows two subagents per turn and resets on a new prompt", a
     input: { agent: "developer", description: "x", prompt: "do" },
   })
 
-  await before(dispatch("c1"))
-  await before(dispatch("c2"))
-  await assert.rejects(before(dispatch("c3")), /do this inline/)
+  for (let index = 0; index < 8; index += 1) {
+    await before(dispatch(`c${index}`))
+  }
+  await assert.rejects(before(dispatch("c8")), /do this inline/)
 
   await handlers.session.prompt({ sessionID: "ses_main", prompt: { text: "next" } })
-  await before(dispatch("c4"))
+  await before(dispatch("c9"))
   rmSync(directory, { recursive: true, force: true })
 })
 

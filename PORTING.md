@@ -25,7 +25,7 @@ Port date: 2026-11-09.
 - Root `README.md` replaced with the OpenCode port README. The upstream README is
   `README.upstream.md`.
 - Model routing uses `qwen3.7-plus` for the main orchestrator, `deepseek-v4.1-flash`, `glm-5.3-flash`, `gpt-6-luna`, and `deepseek-v4-pro` for `code-reviewer` and `qa`.
-- The OpenCode hook layer adds fail-closed payload handling, a dispatch gate, a block
+- The OpenCode hook layer adds fail-closed payload handling, an eight-per-turn dispatch gate, a block
   loop breaker, tool-output truncation, and a retry fallback.
 
 ## Unchanged

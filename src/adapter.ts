@@ -204,6 +204,7 @@ export function makeInput(
 
 // --- Cheap-routing state ----------------------------------------------------
 
+const MAX_DISPATCHES_PER_TURN = 8
 const turnDispatches = new Map<string, number>()
 const activeGptLuna = new Map<string, string>()
 
@@ -216,7 +217,7 @@ export function resetTurn(sessionID: string): void {
 
 export function checkDispatch(sessionID: string, agent: string, callID: string): void {
   const count = turnDispatches.get(sessionID) ?? 0
-  if (count >= 2) throw new Error("do this inline")
+  if (count >= MAX_DISPATCHES_PER_TURN) throw new Error("do this inline")
   if (GPT_LUNA_AGENTS.has(agent)) {
     for (const owner of activeGptLuna.values()) {
       if (owner === sessionID) throw new Error("do this inline")

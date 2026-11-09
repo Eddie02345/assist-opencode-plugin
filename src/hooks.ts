@@ -229,11 +229,15 @@ export async function registerHooks(ctx: any): Promise<HookRegistration> {
       if (subagent) {
         await handleBlock(ctx, event, "subagent", "depth-1", "subagents cannot spawn subagents")
       }
-      const agent = String((event.input as any).agent ?? "")
-      try {
-        checkDispatch(event.sessionID, agent, event.id)
-      } catch {
-        throw new GateDenied("dispatch-gate", "do this inline")
+      // The per-turn budget applies to the orchestrator's explicit dispatches.
+      // Child sessions are already denied by depth-1 above.
+      if (!subagent) {
+        const agent = String((event.input as any).agent ?? "")
+        try {
+          checkDispatch(event.sessionID, agent, event.id)
+        } catch {
+          throw new GateDenied("dispatch-gate", "do this inline")
+        }
       }
     }
 
