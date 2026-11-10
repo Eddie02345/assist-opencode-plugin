@@ -162,6 +162,12 @@ function systemMessage(name: string, result: any) {
   return typeof message === "string" ? message : ""
 }
 
+function isDoPlanDispatch(input: any): boolean {
+  const prompt = String(input?.prompt ?? "")
+  const description = String(input?.description ?? "")
+  return prompt.includes("/do") || description.includes("/do") || description.includes("do-plan")
+}
+
 export interface HookRegistration {
   cleanup: () => void
 }
@@ -230,11 +236,21 @@ export async function registerHooks(ctx: any): Promise<HookRegistration> {
         await handleBlock(ctx, event, "subagent", "depth-1", "subagents cannot spawn subagents")
       }
       // The per-turn budget applies to the orchestrator's explicit dispatches.
-      // Child sessions are already denied by depth-1 above.
+      // Child sessions bypass this gate entirely (depth-1 above is the only
+      // recursion guard). Explicitly dispatched subagents, including waves
+      // initiated under /do plans, are allowed through up to the ceilings
+      // enforced by checkDispatch. No heuristic task-size limit is applied.
       if (!subagent) {
         const agent = String((event.input as any).agent ?? "")
         try {
-          checkDispatch(event.sessionID, agent, event.id)
+          // /do waves share the same hard ceilings but are never forced
+          // inline for size reasons: the marker only documents the bypass
+          // of any task-size heuristic, the ceiling check still applies.
+          if (isDoPlanDispatch(event.input)) {
+            checkDispatch(event.sessionID, agent, event.id)
+          } else {
+            checkDispatch(event.sessionID, agent, event.id)
+          }
         } catch {
           throw new GateDenied("dispatch-gate", "do this inline")
         }

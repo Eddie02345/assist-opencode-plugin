@@ -470,7 +470,7 @@ test("a subagent cannot dispatch another subagent", async () => {
   rmSync(directory, { recursive: true, force: true })
 })
 
-test("only one gpt-6-luna subagent runs at a time", async () => {
+test("up to eight concurrent gpt-6-luna subagents run at a time", async () => {
   reset()
   const directory = projectDir("luna")
   const { ctx, handlers } = fakeContext(directory)
@@ -486,14 +486,18 @@ test("only one gpt-6-luna subagent runs at a time", async () => {
     input: { agent: "reviewer", description: "x", prompt: "review" },
   })
 
-  await before(dispatch("c1"))
-  await assert.rejects(before(dispatch("c2")), /do this inline/)
+  for (let index = 0; index < 7; index += 1) {
+    await before(dispatch(`c${index}`))
+  }
   await after({
-    ...dispatch("c1"),
+    ...dispatch("c0"),
     status: "completed",
     result: { output: { sessionID: "ses_child", status: "completed", output: "done" } },
   })
-  await before(dispatch("c3"))
+  await before(dispatch("c7"))
+  await assert.rejects(before(dispatch("c8")), /do this inline/)
+  await handlers.session.prompt({ sessionID: "ses_main", prompt: { text: "next" } })
+  await before(dispatch("c9"))
   rmSync(directory, { recursive: true, force: true })
 })
 
