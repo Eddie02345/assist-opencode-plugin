@@ -230,8 +230,12 @@ export function checkDispatch(sessionID: string, agent: string, callID: string):
   if (GPT_LUNA_AGENTS.has(agent)) activeGptLuna.set(callID, sessionID)
 }
 
-export function endDispatch(callID: string): void {
+export function endDispatch(callID: string, sessionID: string, succeeded: boolean): void {
   activeGptLuna.delete(callID)
+  if (succeeded) return
+  const count = turnDispatches.get(sessionID)
+  if (count === undefined) return
+  turnDispatches.set(sessionID, Math.max(0, count - 1))
 }
 
 export function resetRoutingState(): void {

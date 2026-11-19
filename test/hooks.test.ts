@@ -443,10 +443,81 @@ test("dispatch gate allows eight subagents per turn and resets on a new prompt",
   for (let index = 0; index < 8; index += 1) {
     await before(dispatch(`c${index}`))
   }
-  await assert.rejects(before(dispatch("c8")), /do this inline/)
+  await assert.rejects(before(dispatch("c8")), /dispatch cap was reached/i)
 
   await handlers.session.prompt({ sessionID: "ses_main", prompt: { text: "next" } })
   await before(dispatch("c9"))
+  rmSync(directory, { recursive: true, force: true })
+})
+
+test("answering a question resets the per-turn dispatch budget", async () => {
+  reset()
+  const directory = projectDir("dispatch-question")
+  const { ctx, handlers } = fakeContext(directory)
+  await registerHooks(ctx)
+  const before = handlers.tool["execute.before"]
+  const after = handlers.tool["execute.after"]
+  const dispatch = (id: string) => ({
+    tool: "subagent",
+    sessionID: "ses_main",
+    agent: "build",
+    messageID: "m",
+    id,
+    input: { agent: "developer", description: "x", prompt: "do" },
+  })
+
+  for (let index = 0; index < 8; index += 1) {
+    await before(dispatch(`q${index}`))
+  }
+  await assert.rejects(before(dispatch("q8")), /dispatch cap was reached/i)
+
+  await after({
+    tool: "question",
+    sessionID: "ses_main",
+    agent: "build",
+    messageID: "m",
+    id: "question-1",
+    status: "completed",
+    input: {},
+    result: {},
+  })
+  await before(dispatch("q9"))
+  rmSync(directory, { recursive: true, force: true })
+})
+
+test("failed subagent dispatches refund the per-turn budget", async () => {
+  reset()
+  const directory = projectDir("dispatch-refund")
+  const { ctx, handlers } = fakeContext(directory)
+  await registerHooks(ctx)
+  const before = handlers.tool["execute.before"]
+  const after = handlers.tool["execute.after"]
+  const dispatch = (id: string) => ({
+    tool: "subagent",
+    sessionID: "ses_main",
+    agent: "build",
+    messageID: "m",
+    id,
+    input: { agent: "developer", description: "x", prompt: "do" },
+  })
+
+  for (let index = 0; index < 4; index += 1) {
+    await before(dispatch(`r${index}`))
+  }
+  for (const id of ["r0", "r1"]) {
+    await after({
+      ...dispatch(id),
+      status: "failed",
+      error: { message: "subagent failed" },
+    })
+  }
+
+  // Two dispatches were refunded, so six more stay under the cap of eight.
+  // Without the refund the fourth of these would already be denied.
+  for (let index = 4; index < 10; index += 1) {
+    await before(dispatch(`r${index}`))
+  }
+  await assert.rejects(before(dispatch("r10")), /dispatch cap was reached/i)
   rmSync(directory, { recursive: true, force: true })
 })
 
@@ -495,7 +566,7 @@ test("up to eight concurrent gpt-6-luna subagents run at a time", async () => {
     result: { output: { sessionID: "ses_child", status: "completed", output: "done" } },
   })
   await before(dispatch("c7"))
-  await assert.rejects(before(dispatch("c8")), /do this inline/)
+  await assert.rejects(before(dispatch("c8")), /dispatch cap was reached/i)
   await handlers.session.prompt({ sessionID: "ses_main", prompt: { text: "next" } })
   await before(dispatch("c9"))
   rmSync(directory, { recursive: true, force: true })

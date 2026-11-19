@@ -252,7 +252,10 @@ export async function registerHooks(ctx: any): Promise<HookRegistration> {
             checkDispatch(event.sessionID, agent, event.id)
           }
         } catch {
-          throw new GateDenied("dispatch-gate", "do this inline")
+          throw new GateDenied(
+            "dispatch-gate",
+            "assist-plugin: the per-turn subagent dispatch cap was reached; finish this turn inline. The budget resets on your next prompt or when you answer a question.",
+          )
         }
       }
     }
@@ -272,7 +275,7 @@ export async function registerHooks(ctx: any): Promise<HookRegistration> {
       gate("phi-outbound-guard", legacy.phiOutboundGuard, input, { failClosed: guarded })
       gate("ferpa-disclosure-guard", legacy.ferpaDisclosureGuard, input, { mode: "run", failClosed: guarded })
     } catch (error) {
-      if (event.tool === "subagent") endDispatch(event.id)
+      if (event.tool === "subagent") endDispatch(event.id, event.sessionID, false)
       if (error instanceof GateDenied) {
         await handleBlock(ctx, event, event.tool, error.rule, error.reason)
       }
@@ -281,6 +284,8 @@ export async function registerHooks(ctx: any): Promise<HookRegistration> {
   })
 
   await ctx.tool.hook("execute.after", async (event: any) => {
+    // Answering a question prompt starts a fresh dispatch budget.
+    if (event.tool === "question" && event.status === "completed") resetTurn(event.sessionID)
     const tool = claudeToolName(event.tool)
     if (!tool) return
     let input: any
@@ -306,11 +311,11 @@ export async function registerHooks(ctx: any): Promise<HookRegistration> {
       )
     } catch (error) {
       note(`skipping post-tool handling for ${event.tool}: ${error instanceof Error ? error.message : String(error)}`)
-      if (event.tool === "subagent") endDispatch(event.id)
+      if (event.tool === "subagent") endDispatch(event.id, event.sessionID, false)
       return
     }
 
-    if (event.tool === "subagent") endDispatch(event.id)
+    if (event.tool === "subagent") endDispatch(event.id, event.sessionID, event.status === "completed")
     if (event.status === "completed" && event.result) truncateToolResult(event.tool, event.result)
 
     if (event.status === "completed") {
